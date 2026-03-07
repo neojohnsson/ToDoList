@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useContext } from 'react'
 import { useNavigate } from 'react-router-dom';
 import supabase from '../utils/supabase'
 import '../App.css'
+import { AuthContext } from '../context/AuthContext'
 
-function Instruments({ role, userId, onRoleChange }: { role : string, userId : string, onRoleChange : (role: string) => void}) {
+// { role, userId, onRoleChange }: { role : string, userId : string, onRoleChange : (role: string) => void}
+function Instruments() {
   const [instruments, setInstruments] = useState<{ id: number; name: string }[]>([]);
   const [item, setItem] = useState('');
   const navigate = useNavigate();
@@ -12,6 +14,8 @@ function Instruments({ role, userId, onRoleChange }: { role : string, userId : s
   const roomChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const { role, userId, onRoleChange } = useContext(AuthContext)!;
+  const [sortOrder, setSortOrder ] = useState<string>("newest");
 
   async function getInstruments() {
     const { data, error } = await supabase.from('instruments').select();
@@ -115,15 +119,27 @@ function Instruments({ role, userId, onRoleChange }: { role : string, userId : s
       }
       {isTyping && <span>Someone is typing...</span>}
       <ul className="instrument-list">
-        {instruments.map((instrument) => (
+      
+        {[...instruments].sort((a, b) => {
+          if ( sortOrder === 'alphabetic' ) return a.name.localeCompare(b.name);
+          if ( sortOrder === 'backwards') return b.name.localeCompare(a.name);
+          if ( sortOrder === 'newest') return b.id - a.id;
+          return a.id - b.id;
+        }).map((instrument) => (
           <li onClick={() => role == 'admin' && removeInstrument(instrument.id)} key={instrument.id}>
             {instrument.name}
           </li>
         ))}
+        
       </ul>
       <div>
         <button className="instrument-button" onClick={goAdmin}>Be "admin"</button>
         <button className="instrument-button" onClick={goUser}>Be "user"</button>
+        <br /><br />
+        <button className="instrument-button" onClick={() => setSortOrder('alphabetic')}>Sort alphabetically</button>
+        <button className="instrument-button" onClick={() => setSortOrder('backwards')}>Sort alphabetically backwards</button>
+        <button className="instrument-button" onClick={() => setSortOrder('newest')}>Sort newest first</button>
+        <button className="instrument-button" onClick={() => setSortOrder('oldest')}>Sort oldest first</button>
       </div>
     </div>
   )

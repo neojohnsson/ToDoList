@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import supabase from './utils/supabase'
 import SignIn from './component/SignIn'
 import Instruments from './component/Instruments'
+import { AuthContext } from './context/AuthContext'
 import './App.css'
 
 function App() {
@@ -32,17 +33,19 @@ function App() {
   if (loading) return null
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        // "?" Works as a if/else. If SESSION == logged in, NAVIGATE else SIGNIN
-        element={session ? <Navigate to="/instruments" replace /> : <SignIn />}
-      />
-      <Route
-        path="/instruments"
-        element={session ? <Instruments role={role} userId={session.user.id} onRoleChange={setRole} /> : <Navigate to="/" replace />}
-      />
-    </Routes>
+    <AuthContext.Provider value={{ role, userId: session?.user.id ?? '', onRoleChange: setRole }}>
+      <Routes>
+        <Route
+          path="/"
+          // "?" Works as a if/else. If SESSION == logged in, NAVIGATE else SIGNIN
+          element={session ? <Navigate to="/instruments" replace /> : <SignIn />}
+        />
+        <Route
+          path="/instruments"
+          element={session ? <Instruments /> : <Navigate to="/" replace />}
+        />
+      </Routes>
+    </ AuthContext.Provider>
   )
 }
 
